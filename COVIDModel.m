@@ -1,4 +1,4 @@
-classdef COVIDModel < handle
+    classdef COVIDModel < handle
     %MAIN SEIRVD Model with ONLY two interacting subpopulations
 
     properties
