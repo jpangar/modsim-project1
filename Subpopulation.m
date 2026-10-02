@@ -59,10 +59,18 @@ classdef Subpopulation
             obj.numDeceased = numDeceased;
         end
 
-        function [postInfection, vaccinated, naive, semirisk, risk, infectious, deceased] = simulateAction(obj)
+        function [postInfection, vaccinated, naive, semirisk, risk, infectious, deceased] = simulateAction(obj, time)
             %METHOD1 Iterate through one timestep using object parameters
             %and stocks
             %   Uses equations accordingly. No return value
+
+            %   Makes Vaccination only occur after time = 10
+            
+            if time < 10
+                obj.Pvaccinated = 0;
+            end
+            %   The one fucking benefit of matlab classes is it really doesn't like side effects.
+
             deltaSemiriskVaccinated = obj.Psemirisk * obj.numVaccinated;
             deltaSemiriskPostInfection = obj.Psemirisk * obj.numPostInfection;
 
@@ -85,6 +93,8 @@ classdef Subpopulation
             risk = obj.numRisk + deltaRisk - deltaInfectiousRisk;
             infectious = obj.numInfectious + deltaInfectiousSemirisk + deltaInfectiousRisk - deltaRecovered - deltaDeceased;
             deceased = obj.numDeceased + deltaDeceased;
+
+            
             
         end
 

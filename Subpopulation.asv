@@ -1,5 +1,6 @@
 classdef Subpopulation
     %Subpopulation class
+    % Parameters MUST be in range [0,1]
     % CURRENT LIMITATIONS:
     % (mostly pertains to no time delay)
     % Does not account that vaccination takes effect after 10 days
@@ -58,10 +59,14 @@ classdef Subpopulation
             obj.numDeceased = numDeceased;
         end
 
-        function [postInfection, vaccinated, naive, semirisk, risk, infectious, deceased] = simulateAction(obj)
+        function [postInfection, vaccinated, naive, semirisk, risk, infectious, deceased, time] = simulateAction(obj)
             %METHOD1 Iterate through one timestep using object parameters
             %and stocks
             %   Uses equations accordingly. No return value
+
+            %   Makes Vaccination only ocu
+
+
             deltaSemiriskVaccinated = obj.Psemirisk * obj.numVaccinated;
             deltaSemiriskPostInfection = obj.Psemirisk * obj.numPostInfection;
 
@@ -76,12 +81,6 @@ classdef Subpopulation
             deltaDeceased = obj.Pdeceased * obj.numInfectious;
             deltaRecovered = obj.Precovered * obj.numInfectious;
 
-            %clamp values
-            deltaSemiriskVaccinated = max(0, min(obj.numVaccinated, deltaSemiriskVaccinated));
-            deltaSemiriskPostInfection = max(0, min(obj.numPostInfection, deltaSemiriskPostInfection));
-
-            deltaRisk = max(0, min(obj.numNaive, deltaRisk));
-            
             
             postInfection = obj.numPostInfection - deltaSemiriskPostInfection - deltaVaccinatedPostInfected + deltaRecovered;
             vaccinated = obj.numVaccinated - deltaSemiriskVaccinated + deltaVaccinatedPostInfected + deltaVaccinatedNaive;
@@ -90,7 +89,7 @@ classdef Subpopulation
             risk = obj.numRisk + deltaRisk - deltaInfectiousRisk;
             infectious = obj.numInfectious + deltaInfectiousSemirisk + deltaInfectiousRisk - deltaRecovered - deltaDeceased;
             deceased = obj.numDeceased + deltaDeceased;
-
+            
         end
 
         function obj = setStocks(postInfection, vaccinated, naive, semirisk, risk, infectious, deceased)
