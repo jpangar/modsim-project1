@@ -1,4 +1,4 @@
-classdef Subpopulation
+classdef Subpopulation < handle
     %Subpopulation class
     % Parameters MUST be in range [0,1]
     % CURRENT LIMITATIONS:
@@ -14,8 +14,7 @@ classdef Subpopulation
     % post-infection -> vaccinated.
     
     properties
-        Psemirisk
-        Prisk
+        Pcontact
         Pinfectivity_semirisk
         Pinfectivity_risk
         Precovered
@@ -32,18 +31,18 @@ classdef Subpopulation
     end
 
     methods
-        function obj = Subpopulation(Psemirisk, Prisk, Pinfectivity_semirisk, Pinfectivity_risk, ...
+        function obj = Subpopulation(Pcontact, Pinfectivity_semirisk, Pinfectivity_risk, ...
                                      Precovered, Pdeceased, Pvaccinated, ...
-                                     numPostInfection, numVaccinated, numNaive, numSemirisk, numRisk, ...
+                                     numPostInfection, numVaccinated, numNaive, ...
                                      numInfectious, numDeceased)
             %Subpopulation Construct an instance of this class using
             %parameters
             %   Enter parameters in correct order, initial amount of
             %   deceased and
-            assert(Psemirisk <= Prisk, "Vaccinated/post-infected people cannot be more infectious than infection-naive");
-
-            obj.Psemirisk = Psemirisk;
-            obj.Prisk = Prisk;
+            assert(Pinfectivity_semirisk <= Pinfectivity_risk, "Vaccinated/post-infected people cannot be more infectious than infection-naive");
+            assert(Pcontact + Pvaccinated <= 1, "Flow exceeds stock quantity");
+            assert(Precovered + Pdeceased <= 1, "Flow exceeds stock quantity");
+            obj.Pcontact = Pcontact;
             obj.Pinfectivity_semirisk = Pinfectivity_semirisk;
             obj.Pinfectivity_risk = Pinfectivity_risk;
             obj.Precovered = Precovered;
@@ -53,37 +52,50 @@ classdef Subpopulation
             obj.numPostInfection = numPostInfection;
             obj.numVaccinated = numVaccinated;
             obj.numNaive = numNaive;
-            obj.numSemirisk = numSemirisk;
-            obj.numRisk = numRisk;
             obj.numInfectious = numInfectious;
             obj.numDeceased = numDeceased;
         end
+    
+        function n = getLiving(obj)
+            n = obj.numPostInfection + obj.numVaccinated + obj.numNaive + obj.numInfectious;
+        end
 
-        function [postInfection, vaccinated, naive, semirisk, risk, infectious, deceased] = simulateAction(obj, time)
+        function n = getPopulation(obj)
+            n = obj.getLiving() + obj.numDeceased;
+        end
+
+        function [postInfection, vaccinated, naive, infectious, deceased] = simulateAction(obj, time, infectious_fraction)
             %METHOD1 Iterate through one timestep using object parameters
             %and stocks
-            %   Uses equations accordingly. No return value
+            %   Uses equations accordingly. No return value           
+         
 
-           
-            
-           
-            %   The one fucking benefit of matlab classes is it really doesn't like side effects.
+            vaccinatedContact = obj.Pcontact * obj.numVaccinated;
+            postInfectionContact = obj.Pcontact * obj.numPostInfection;
 
-            deltaSemiriskVaccinated = obj.Psemirisk * obj.numVaccinated;
-            deltaSemiriskPostInfection = obj.Psemirisk * obj.numPostInfection;
+            naiveContact = obj.Pcontact * obj.numNaive;
 
-            deltaRisk = obj.Prisk * obj.numNaive;
+            deltaInfectiousVaccine = vaccinatedContact*obj.Pinfectivity_semirisk*infectious_fraction;
+            deltaInfectiousPostInfection = postInfectionContact*obj.Pinfectivity_semirisk*infectious_fraction;
 
-            deltaVaccinatedPostInfected = obj.Pvaccinated * obj.numPostInfection;
-            deltaVaccinatedNaive = obj.Pvaccinated * obj.numNaive;
-            
-            deltaInfectiousSemirisk = obj.numSemirisk * obj.Pinfectivity_semirisk;
-            deltaInfectiousRisk = obj.numRisk * obj.Pinfectivity_risk;
-    
-            deltaDeceased = obj.Pdeceased * obj.numInfectious;
+            deltaInfectiousNaive = naiveContact*obj.Pinfectivity_risk*infectious_fraction;
+
             deltaRecovered = obj.Precovered * obj.numInfectious;
+            deltaDeceased = obj.Pdeceased * obj.numDeceased;
 
-            
+            deltaVaccinePostInfection = obj.Pvaccinated*obj.numPostInfection;
+            deltaVaccineNaive = obj.Pvaccinated*obj.numNaive;
+
+            if (time < 365) 
+              deltaVaccinePostInfection = 0;
+              deltaVaccineNaive = 0;
+            end
+
+            % Must clamp when delta calculated by 3 or more variables;
+            deltaInfectiousSemirisk = min(deltaInfectiousSemirisk, obj.numSemirisk);
+            deltaInfectiousRisk = min(deltaInfectiousRisk, obj.numRisk);
+
+        
             postInfection = obj.numPostInfection - deltaSemiriskPostInfection - deltaVaccinatedPostInfected + deltaRecovered;
             vaccinated = obj.numVaccinated - deltaSemiriskVaccinated + deltaVaccinatedPostInfected + deltaVaccinatedNaive;
             naive = obj.numNaive - deltaRisk - deltaVaccinatedNaive;
@@ -92,11 +104,15 @@ classdef Subpopulation
             infectious = obj.numInfectious + deltaInfectiousSemirisk + deltaInfectiousRisk - deltaRecovered - deltaDeceased;
             deceased = obj.numDeceased + deltaDeceased;
 
-            
+            %   Makes Vaccination only occur after time = 365 instead of
+            %   10. Though 10 is written, this is variable across every
+            %   vaccinated person (e.g., we need to keep track of everyone
+            %   who is vaccinated and when their 10 days has started,
+            %   which we can do in final draft
             
         end
 
-        function obj = setStocks(postInfection, vaccinated, naive, semirisk, risk, infectious, deceased)
+        function obj = setStocks(obj, postInfection, vaccinated, naive, semirisk, risk, infectious, deceased)
             obj.numPostInfection = postInfection;
             obj.numVaccinated = vaccinated;
             obj.numNaive = naive;
