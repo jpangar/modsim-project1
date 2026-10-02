@@ -14,8 +14,7 @@ classdef Subpopulation
     % post-infection -> vaccinated.
     
     properties
-        Psemirisk
-        Prisk
+        Pcontact
         Pinfectivity_semirisk
         Pinfectivity_risk
         Precovered
@@ -32,7 +31,7 @@ classdef Subpopulation
     end
 
     methods
-        function obj = Subpopulation(Psemirisk, Prisk, Pinfectivity_semirisk, Pinfectivity_risk, ...
+        function obj = Subpopulation(Pcontact, Pinfectivity_semirisk, Pinfectivity_risk, ...
                                      Precovered, Pdeceased, Pvaccinated, ...
                                      numPostInfection, numVaccinated, numNaive, numSemirisk, numRisk, ...
                                      numInfectious, numDeceased)
@@ -40,10 +39,9 @@ classdef Subpopulation
             %parameters
             %   Enter parameters in correct order, initial amount of
             %   deceased and
-            assert(Psemirisk <= Prisk, "Vaccinated/post-infected people cannot be more infectious than infection-naive");
+            assert(Pinfectivity_semirisk <= Pinfectivity_risk, "Vaccinated/post-infected people cannot be more infectious than infection-naive");
 
-            obj.Psemirisk = Psemirisk;
-            obj.Prisk = Prisk;
+            obj.Pcontact = Pcontact;
             obj.Pinfectivity_semirisk = Pinfectivity_semirisk;
             obj.Pinfectivity_risk = Pinfectivity_risk;
             obj.Precovered = Precovered;
@@ -64,17 +62,15 @@ classdef Subpopulation
             %and stocks
             %   Uses equations accordingly. No return value
 
-            %   Makes Vaccination only occur after time = 10
+           
             
-            if time < 10
-                obj.Pvaccinated = 0;
-            end
+           
             %   The one fucking benefit of matlab classes is it really doesn't like side effects.
 
-            deltaSemiriskVaccinated = obj.Psemirisk * obj.numVaccinated;
-            deltaSemiriskPostInfection = obj.Psemirisk * obj.numPostInfection;
+            deltaSemiriskVaccinated = obj.Pcontact * obj.numVaccinated;
+            deltaSemiriskPostInfection = obj.Pcontact * obj.numPostInfection;
 
-            deltaRisk = obj.Prisk * obj.numNaive;
+            deltaRisk = obj.Pcontact * obj.numNaive;
 
             deltaVaccinatedPostInfected = obj.Pvaccinated * obj.numPostInfection;
             deltaVaccinatedNaive = obj.Pvaccinated * obj.numNaive;
@@ -85,7 +81,6 @@ classdef Subpopulation
             deltaDeceased = obj.Pdeceased * obj.numInfectious;
             deltaRecovered = obj.Precovered * obj.numInfectious;
 
-            
             postInfection = obj.numPostInfection - deltaSemiriskPostInfection - deltaVaccinatedPostInfected + deltaRecovered;
             vaccinated = obj.numVaccinated - deltaSemiriskVaccinated + deltaVaccinatedPostInfected + deltaVaccinatedNaive;
             naive = obj.numNaive - deltaRisk - deltaVaccinatedNaive;
@@ -94,7 +89,14 @@ classdef Subpopulation
             infectious = obj.numInfectious + deltaInfectiousSemirisk + deltaInfectiousRisk - deltaRecovered - deltaDeceased;
             deceased = obj.numDeceased + deltaDeceased;
 
-            
+            %   Makes Vaccination only occur after time = 365 instead of
+            %   10. Though 10 is written, this is variable across every
+            %   vaccinated person (e.g., we need to keep track of everyone
+            %   who is vaccinated and when their 10 days has started,
+            %   which we can do in final draft
+            if (time < 365) 
+                vaccinated = 0;
+            end
             
         end
 

@@ -11,12 +11,14 @@ classdef COVIDModel
         subpopulation1
         subpopulation2
         
-        PInfect1Contact2
-        PInfect2Contact1
+        PInfect1Semirisk2
+        PInfect1Risk2
+        PInfect2Semirisk1
+        PInfect2Risk1
     end
 
     methods
-        function obj = COVIDModel(subpopulation1,subpopulation2, PInfect1Contact2, PInfect2Contact1)
+        function obj = COVIDModel(subpopulation1,subpopulation2, PInfect1Semirisk2, PInfect1Risk2, PInfect2Semirisk1, PInfect2Risk1)
             %Provide both subpopulations and parameters indicating how 
             %   Detailed explanation goes here
             obj.subpopulation1 = subpopulation1;
@@ -31,11 +33,11 @@ classdef COVIDModel
             
             %METHOD1 Summary of this method goes here
             %   Detailed explanation goes here
-            deltaSemirisk2 = obj.PInfect1Contact2*obj.subpopulation1.numInfected*(obj.subpopulation2.numVaccinated+obj.subpopulation2.numPostInfection);
-            deltaRisk2 = obj.PInfect1Contact2 * obj.subpopulation1.numInfected * obj.subpopulation2.numNaive;
+            deltaSemirisk2 = obj.PIn*obj.subpopulation1.numInfected*(obj.subpopulation2.numVaccinated+obj.subpopulation2.numPostInfection);
+            deltaRisk2 = obj.PInfect1Risk2 * obj.subpopulation1.numInfected * obj.subpopulation2.numNaive;
 
-            deltaSemirisk1 = obj.PInfect2Contact1 * obj.subpopulation2.numInfected*(obj.subpopulation1.numVaccinated+obj.subpopulation1.numPostInfection);
-            deltaRisk1 = obj.PInfect2Contact1 * obj.subpopulation2.numInfected * obj.subpopulation1.numNaive;
+            deltaSemirisk1 = obj.PInfect2Semirisk1 * obj.subpopulation2.numInfected*(obj.subpopulation1.numVaccinated+obj.subpopulation1.numPostInfection);
+            deltaRisk1 = obj.PInfect2Risk1 * obj.subpopulation2.numInfected * obj.subpopulation1.numNaive;
             
             %clamp values, must only do when it takes 3 or more variables.
             deltaSemirisk2 = min(deltaSemirisk2, (obj.subpopulation2.numVaccinated+obj.subpopulation2.numPostInfection));
