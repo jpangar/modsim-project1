@@ -65,7 +65,7 @@ classdef Subpopulation
            
             
            
-            %   The one fucking benefit of matlab classes is it really doesn't like side effects.
+          
 
             deltaSemiriskVaccinated = obj.Pcontact * obj.numVaccinated;
             deltaSemiriskPostInfection = obj.Pcontact * obj.numPostInfection;
