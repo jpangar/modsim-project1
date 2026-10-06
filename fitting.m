@@ -7,9 +7,9 @@ weekly = groupsummary(tab_data, "start_date", "sum", ["new_cases", "new_deaths"]
 
 startIdx = find(weekly.start_date == datetime(2021,1,21));
 %Variable rate every 4 weeks
-blockWeeks = 4;   
+blockWeeks = 8;   
 nBlocks = 4;
-%1/21 to 5/6, 4 months total
+%32 weeks, or over half a year
 nWeeks = blockWeeks*nBlocks;  
 
 dataWeeks = weekly.start_date(startIdx : startIdx+nWeeks-1)';
@@ -26,12 +26,25 @@ for b = 1:nBlocks
     %parameter sweep all values
     for i = 1:length(PinfValues)
         modelCases = runModel([schedule, PinfValues(i)], blockWeeks, nw, prevWeekDeaths);
-        blockErrors(i) = sum((log(modelCases) - log(dataCases(1:nw))).^2);
+        blockErrors(i) = mean((modelCases - dataCases(1:nw)).^2);
     end
     [~, best] = min(blockErrors);
     schedule = [schedule, PinfValues(best)];
 end
 [varCases, varDeaths] = runModel(schedule, blockWeeks, nWeeks, prevWeekDeaths);
+
+%plot fitted model vs data
+figure;
+subplot(3,1,1);
+plot(dataWeeks, dataCases, "ko-", dataWeeks, varCases, "b-", "LineWidth", 1.5);
+ylabel("Weekly cases");
+legend("Data", "Model");
+title("Fitted model vs. data");
+
+subplot(3,1,2);
+plot(dataWeeks, dataDeaths, "ko-", dataWeeks, varDeaths, "r-", "LineWidth", 1.5);
+ylabel("Weekly deaths");
+legend("Data", "Model");
 
 
 function [weeklyCases, weeklyDeaths] = runModel(schedule, blockWeeks, nWeeks, prevWeekDeaths)
@@ -64,7 +77,7 @@ function [weeklyCases, weeklyDeaths] = runModel(schedule, blockWeeks, nWeeks, pr
         dailyDeaths(day) = young.newDeaths + old.newDeaths;
     end
     
-    %comptue weeklycases and deaths
+    %comptue weekly cases and deaths
     avgDeaths = prevWeekDeaths / 7;
     dailyDeaths = [avgDeaths * ones(1,7), dailyDeaths(1:end-7)];
     
